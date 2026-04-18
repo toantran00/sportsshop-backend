@@ -21,5 +21,6 @@ public class Order {
     private int quantityBought;
     private double totalPrice;
     private LocalDateTime orderDate;
+    private String status;
 
 }
