@@ -7,6 +7,7 @@ import com.example.sportsshop.repository.OrderRepository;
 import com.example.sportsshop.repository.ProductRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,7 +35,6 @@ public class OrderController {
         }
         product.setQuantity(product.getQuantity() - Request.getQuantity());
         productRepository.save(product);
-
         Order newOrder = new Order();
         newOrder.setCustomerName(currentUsername);
         newOrder.setProductName(product.getName());
