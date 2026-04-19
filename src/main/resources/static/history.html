@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch Sử Đơn Hàng - ShopeeSport</title>
+    <meta name="description" content="Xem lịch sử các đơn hàng đã đặt tại ShopeeSport.">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #f6f6f8; }
+        .navbar-shopee { background: linear-gradient(90deg, #ee4d2d, #ff6a3c); }
+        .navbar-brand { font-weight: 800; }
+        .status-success { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+        .status-cancelled { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .status-pending { background: #fef9c3; color: #713f12; border: 1px solid #fde047; }
+        .order-card {
+            background: white; border-radius: 12px; border: 1px solid #eee;
+            overflow: hidden; transition: box-shadow 0.2s;
+        }
+        .order-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .order-header {
+            background: #fafafa; border-bottom: 1px solid #f0f0f0;
+            padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .order-body { padding: 16px 20px; }
+        .stat-badge { border-radius: 20px; padding: 4px 12px; font-size: 0.78rem; font-weight: 700; }
+        .empty-state { text-align: center; padding: 80px 20px; color: #aaa; }
+        .empty-state .icon { font-size: 4rem; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+
+<script>
+    let myToken = localStorage.getItem("sports_token");
+    let userRole = localStorage.getItem("sports_role") || "";
+    if (!myToken) window.location.href = "/login";
+    if (!userRole) {
+        try {
+            const p = JSON.parse(atob(myToken.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+            userRole = p.role || "";
+            localStorage.setItem("sports_role", userRole);
+        } catch(_) {}
+    }
+    if (userRole === "ADMIN") window.location.href = "/seller";
+</script>
+
+<nav class="navbar navbar-expand-lg navbar-dark navbar-shopee shadow-sm mb-4">
+    <div class="container">
+        <a class="navbar-brand fs-3" href="/shop">🛒 ShopeeSport</a>
+        <div class="d-flex align-items-center gap-2">
+            <a href="/shop" class="btn btn-outline-light btn-sm">🛍️ Cửa Hàng</a>
+            <a href="/cart" class="btn btn-outline-light btn-sm">🛒 Giỏ Hàng</a>
+            <a href="/history" class="btn btn-light text-danger fw-bold btn-sm">📦 Đơn Mua</a>
+            <button class="btn btn-dark btn-sm" onclick="logout()">Đăng Xuất</button>
+        </div>
+    </div>
+</nav>
+
+<div class="container mb-5">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h4 class="fw-bold text-dark m-0">📦 Lịch Sử Mua Hàng</h4>
+        <span class="text-muted small" id="orderCount"></span>
+    </div>
+    <div id="historyContainer"></div>
+</div>
+
+<script>
+    function logout() {
+        localStorage.removeItem("sports_token");
+        localStorage.removeItem("sports_role");
+        window.location.href = "/login";
+    }
+
+    function escapeHtml(text) {
+        return String(text)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+    }
+
+    function getStatusBadge(status) {
+        const s = (status || "").toUpperCase();
+        if (s === "SUCCESS") return `<span class="stat-badge status-success">✅ Thành Công</span>`;
+        if (s === "CANCELLED") return `<span class="stat-badge status-cancelled">❌ Đã Huỷ</span>`;
+        return `<span class="stat-badge status-pending">⏳ Đang Xử Lý</span>`;
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return "—";
+        const d = new Date(dateStr);
+        const pad = n => String(n).padStart(2, '0');
+        return `${pad(d.getHours())}:${pad(d.getMinutes())} — ${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+    }
+
+    window.onload = () => {
+        fetch('/api/orders/my-history', {
+            headers: { 'Authorization': 'Bearer ' + myToken }
+        })
+        .then(res => {
+            if (res.status === 401 || res.status === 403) logout();
+            if (!res.ok) throw new Error("Không tải được lịch sử đơn hàng");
+            return res.json();
+        })
+        .then(orders => {
+            const container = document.getElementById("historyContainer");
+            document.getElementById("orderCount").textContent = orders.length > 0 ? `${orders.length} đơn hàng` : "";
+
+            if (orders.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📦</div>
+                        <h5 class="fw-bold text-muted">Bạn chưa có đơn hàng nào!</h5>
+                        <p class="text-muted">Hãy quay lại cửa hàng và chọn những sản phẩm yêu thích.</p>
+                        <a href="/shop" class="btn btn-danger mt-2">Khám Phá Ngay</a>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = orders.map(o => `
+                <div class="order-card mb-3">
+                    <div class="order-header flex-wrap gap-2">
+                        <div>
+                            <span class="fw-bold text-primary">#${o.id}</span>
+                            <span class="text-muted small ms-3">${formatDate(o.orderDate)}</span>
+                        </div>
+                        ${getStatusBadge(o.status)}
+                    </div>
+                    <div class="order-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-5">
+                                <div class="fw-bold">${escapeHtml(o.productName)}</div>
+                                ${o.shippingAddress ? `<div class="text-muted small mt-1">📍 ${escapeHtml(o.shippingAddress)}</div>` : ''}
+                            </div>
+                            <div class="col-md-3 text-center mt-2 mt-md-0">
+                                <span class="badge bg-secondary">SL: ${o.quantityBought}</span>
+                            </div>
+                            <div class="col-md-4 text-md-end mt-2 mt-md-0">
+                                <span class="text-danger fw-bold fs-5">${o.totalPrice.toLocaleString('vi-VN')} đ</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>`).join("");
+        })
+        .catch(err => {
+            document.getElementById("historyContainer").innerHTML =
+                `<div class="alert alert-danger text-center">${escapeHtml(err.message)}</div>`;
+        });
+    };
+</script>
+</body>
+</html>

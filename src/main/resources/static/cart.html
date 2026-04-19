@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giỏ Hàng - ShopeeSport</title>
+    <meta name="description" content="Xem và quản lý giỏ hàng của bạn tại ShopeeSport.">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #f6f6f8; }
+        .navbar-shopee { background: linear-gradient(90deg, #ee4d2d, #ff6a3c); }
+        .navbar-brand { font-weight: 800; }
+
+        /* Cart item card */
+        .cart-item-card {
+            background: white; border-radius: 12px; border: 1px solid #eee;
+            padding: 16px 20px; margin-bottom: 12px; display: flex;
+            align-items: center; gap: 16px; transition: box-shadow 0.2s;
+        }
+        .cart-item-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
+        .product-thumb {
+            width: 80px; height: 80px; object-fit: cover;
+            border-radius: 8px; border: 1px solid #f0f0f0; flex-shrink: 0;
+        }
+        .product-thumb-placeholder {
+            width: 80px; height: 80px; border-radius: 8px;
+            background: linear-gradient(135deg, #fee2d5, #ffd0c0);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem; flex-shrink: 0;
+        }
+        .cart-item-info { flex: 1; min-width: 0; }
+        .cart-item-name { font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
+        .cart-item-cat { font-size: 0.8rem; color: #999; }
+
+        /* Qty controls */
+        .qty-control {
+            display: flex; align-items: center; gap: 8px;
+            border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;
+        }
+        .qty-btn {
+            width: 34px; height: 34px; border: none; background: #f8f8f8;
+            font-size: 1.1rem; cursor: pointer; transition: background 0.15s;
+            display: flex; align-items: center; justify-content: center; font-weight: 700;
+        }
+        .qty-btn:hover { background: #ffede8; color: #ee4d2d; }
+        .qty-display {
+            width: 36px; text-align: center; font-weight: 700; font-size: 0.95rem;
+        }
+
+        /* Summary box */
+        .summary-box {
+            background: white; border-radius: 12px; border: 1px solid #eee;
+            padding: 20px; position: sticky; top: 20px;
+        }
+        .summary-box h5 { font-weight: 700; margin-bottom: 16px; color: #333; }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.95rem; }
+        .summary-total {
+            border-top: 2px solid #f0f0f0; padding-top: 14px; margin-top: 14px;
+            font-size: 1.1rem; font-weight: 700;
+        }
+
+        /* Checkout modal */
+        .modal-header-shopee { background: linear-gradient(135deg, #ee4d2d, #ff6a3c); color: white; }
+        .modal-header-shopee .btn-close { filter: brightness(0) invert(1); }
+
+        /* Toast */
+        .toast-container { position: fixed; top: 80px; right: 20px; z-index: 9999; }
+        .toast-item {
+            background: white; border-radius: 10px; padding: 12px 18px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15); margin-bottom: 8px;
+            display: flex; align-items: center; gap: 10px; font-weight: 600;
+            animation: slideIn 0.3s ease; min-width: 280px;
+            border-left: 4px solid #ee4d2d;
+        }
+        .toast-item.success-toast { border-left-color: #22c55e; }
+        .toast-item.error-toast { border-left-color: #ef4444; }
+        @keyframes slideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
+
+        .btn-checkout {
+            background: linear-gradient(135deg, #ee4d2d, #ff6a3c);
+            color: white; font-weight: 700; border: none; border-radius: 8px;
+            padding: 14px; font-size: 1rem; width: 100%; transition: all 0.2s;
+        }
+        .btn-checkout:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(238,77,45,0.35); }
+        .btn-checkout:disabled { opacity: 0.65; transform: none; }
+
+        .empty-state { text-align: center; padding: 80px 20px; color: #aaa; }
+        .empty-state .icon { font-size: 4rem; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+
+<script>
+    let myToken = localStorage.getItem("sports_token");
+    let userRole = localStorage.getItem("sports_role") || "";
+    if (!myToken) window.location.href = "/login";
+    if (!userRole) {
+        try {
+            const p = JSON.parse(atob(myToken.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+            userRole = p.role || "";
+            localStorage.setItem("sports_role", userRole);
+        } catch(_) {}
+    }
+    if (userRole === "ADMIN") window.location.href = "/seller";
+</script>
+
+<nav class="navbar navbar-expand-lg navbar-dark navbar-shopee shadow-sm mb-4">
+    <div class="container">
+        <a class="navbar-brand fs-3" href="/shop">🛒 ShopeeSport</a>
+        <div class="d-flex align-items-center gap-2">
+            <a href="/shop" class="btn btn-outline-light btn-sm">🛍️ Cửa Hàng</a>
+            <a href="/cart" class="btn btn-light text-danger fw-bold btn-sm">🛒 Giỏ Hàng</a>
+            <a href="/history" class="btn btn-outline-light btn-sm">📦 Đơn Mua</a>
+            <button class="btn btn-dark btn-sm" onclick="logout()">Đăng Xuất</button>
+        </div>
+    </div>
+</nav>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="container mb-5">
+    <h4 class="fw-bold mb-4">🛒 Giỏ Hàng Của Bạn</h4>
+    <div class="row g-4">
+        <!-- Cart items -->
+        <div class="col-lg-8">
+            <div id="cartContainer"></div>
+        </div>
+        <!-- Order summary -->
+        <div class="col-lg-4">
+            <div class="summary-box">
+                <h5>📋 Tóm Tắt Đơn Hàng</h5>
+                <div class="summary-row">
+                    <span class="text-muted">Số sản phẩm</span>
+                    <span id="summaryCount" class="fw-bold">0</span>
+                </div>
+                <div class="summary-row">
+                    <span class="text-muted">Tổng tiền hàng</span>
+                    <span id="summarySubtotal" class="fw-bold">0 đ</span>
+                </div>
+                <div class="summary-row">
+                    <span class="text-muted">Phí vận chuyển</span>
+                    <span class="text-success fw-bold">Miễn phí 🎉</span>
+                </div>
+                <div class="summary-row summary-total">
+                    <span>Tổng thanh toán</span>
+                    <span id="summaryTotal" class="text-danger">0 đ</span>
+                </div>
+                <button class="btn-checkout mt-3" id="btnCheckout" onclick="openCheckoutModal()" disabled>
+                    CHỐT ĐƠN NGAY →
+                </button>
+                <a href="/shop" class="btn btn-outline-secondary w-100 mt-2 btn-sm">Tiếp tục mua sắm</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Xác nhận đặt hàng -->
+<div class="modal fade" id="checkoutModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header modal-header-shopee">
+                <h5 class="modal-title fw-bold">🛒 Xác Nhận Đặt Hàng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="checkoutSummaryItems" class="mb-3"></div>
+                <hr>
+                <div class="d-flex justify-content-between fw-bold fs-5">
+                    <span>Tổng thanh toán:</span>
+                    <span class="text-danger" id="checkoutTotal"></span>
+                </div>
+                <div class="mt-3">
+                    <label class="form-label fw-semibold">📍 Địa chỉ giao hàng</label>
+                    <input type="text" id="deliveryAddress" class="form-control" placeholder="Nhập địa chỉ nhận hàng (tùy chọn)">
+                    <div class="form-text">Để trống nếu dùng địa chỉ đã đăng ký trong tài khoản.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Xem lại</button>
+                <button class="btn btn-danger fw-bold px-4" id="btnConfirmCheckout" onclick="checkoutCart()">
+                    Xác Nhận Đặt Hàng
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let cartData = [];
+
+    function logout() {
+        localStorage.removeItem("sports_token");
+        localStorage.removeItem("sports_role");
+        window.location.href = "/login";
+    }
+
+    function escapeHtml(t) {
+        return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function showToast(msg, type = "success") {
+        const container = document.getElementById("toastContainer");
+        const toast = document.createElement("div");
+        const icon = type === "success" ? "✅" : type === "error" ? "❌" : "ℹ️";
+        toast.className = `toast-item ${type}-toast`;
+        toast.innerHTML = `<span>${icon}</span><span>${escapeHtml(msg)}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.animation = "slideOut 0.3s ease forwards";
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    window.onload = () => loadCartAPI();
+
+    function loadCartAPI() {
+        fetch('/api/cart', {
+            headers: { 'Authorization': 'Bearer ' + myToken }
+        })
+        .then(res => {
+            if (res.status === 401 || res.status === 403) logout();
+            if (!res.ok) throw new Error("Không tải được giỏ hàng");
+            return res.json();
+        })
+        .then(cart => {
+            cartData = cart;
+            renderCart(cart);
+        })
+        .catch(err => {
+            document.getElementById("cartContainer").innerHTML =
+                `<div class="alert alert-danger">${escapeHtml(err.message)}</div>`;
+        });
+    }
+
+    function renderCart(cart) {
+        const container = document.getElementById("cartContainer");
+        const btnCheckout = document.getElementById("btnCheckout");
+
+        if (cart.length === 0) {
+            btnCheckout.disabled = true;
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">🛒</div>
+                    <h5 class="fw-bold text-muted">Giỏ hàng trống!</h5>
+                    <p class="text-muted">Hãy quay lại cửa hàng và thêm sản phẩm vào giỏ.</p>
+                    <a href="/shop" class="btn btn-danger mt-2">Mua Sắm Ngay</a>
+                </div>`;
+            updateSummary([], 0);
+            return;
+        }
+
+        let total = 0;
+        let totalQty = 0;
+        cart.forEach(item => {
+            total += item.product.price * item.quantity;
+            totalQty += item.quantity;
+        });
+
+        container.innerHTML = cart.map(item => {
+            const price = item.product.price;
+            const sum = price * item.quantity;
+            const imgHtml = item.product.imageUrl
+                ? `<img src="${encodeURI(item.product.imageUrl)}" class="product-thumb" alt="${escapeHtml(item.product.name)}">`
+                : `<div class="product-thumb-placeholder">🏅</div>`;
+            return `
+                <div class="cart-item-card">
+                    ${imgHtml}
+                    <div class="cart-item-info">
+                        <div class="cart-item-name">${escapeHtml(item.product.name)}</div>
+                        <div class="cart-item-cat">${item.product.category ? escapeHtml(item.product.category.name) : ''}</div>
+                        <div class="text-danger fw-bold mt-1">${price.toLocaleString('vi-VN')} đ</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="qty-control">
+                            <button class="qty-btn" onclick="changeQty(${item.product.id}, ${item.quantity - 1})">−</button>
+                            <span class="qty-display">${item.quantity}</span>
+                            <button class="qty-btn" onclick="changeQty(${item.product.id}, ${item.quantity + 1})">+</button>
+                        </div>
+                        <div class="text-muted small mt-1">= ${sum.toLocaleString('vi-VN')} đ</div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger ms-2" onclick="removeItem(${item.id})" title="Xoá">🗑️</button>
+                </div>`;
+        }).join("");
+
+        btnCheckout.disabled = false;
+        updateSummary(cart, total, totalQty);
+    }
+
+    function updateSummary(cart, total, qty = 0) {
+        document.getElementById("summaryCount").textContent = qty;
+        document.getElementById("summarySubtotal").textContent = total.toLocaleString('vi-VN') + " đ";
+        document.getElementById("summaryTotal").textContent = total.toLocaleString('vi-VN') + " đ";
+    }
+
+    function changeQty(productId, newQty) {
+        fetch(`/api/cart/update/${productId}?quantity=${newQty}`, {
+            method: 'PUT',
+            headers: { 'Authorization': 'Bearer ' + myToken }
+        })
+        .then(res => res.text().then(msg => ({ ok: res.ok, msg })))
+        .then(({ ok, msg }) => {
+            if (!ok) { showToast(msg || "Không cập nhật được số lượng", "error"); return; }
+            loadCartAPI();
+        });
+    }
+
+    function removeItem(cartItemId) {
+        fetch(`/api/cart/item/${cartItemId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + myToken }
+        })
+        .then(res => res.text().then(msg => ({ ok: res.ok, msg })))
+        .then(({ ok, msg }) => {
+            if (!ok) { showToast(msg || "Không xóa được", "error"); return; }
+            showToast("Đã xóa sản phẩm khỏi giỏ hàng");
+            loadCartAPI();
+        });
+    }
+
+    function openCheckoutModal() {
+        if (cartData.length === 0) return;
+        let total = 0;
+        const itemsHtml = cartData.map(item => {
+            const sum = item.product.price * item.quantity;
+            total += sum;
+            return `<div class="d-flex justify-content-between mb-2">
+                <span>${escapeHtml(item.product.name)} × ${item.quantity}</span>
+                <span class="fw-bold">${sum.toLocaleString('vi-VN')} đ</span>
+            </div>`;
+        }).join("");
+        document.getElementById("checkoutSummaryItems").innerHTML = itemsHtml;
+        document.getElementById("checkoutTotal").textContent = total.toLocaleString('vi-VN') + " đ";
+        new bootstrap.Modal(document.getElementById("checkoutModal")).show();
+    }
+
+    function checkoutCart() {
+        const btn = document.getElementById("btnConfirmCheckout");
+        btn.disabled = true; btn.textContent = "Đang xử lý...";
+
+        fetch('/api/orders/checkout-cart', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + myToken }
+        })
+        .then(res => {
+            if (res.status === 401 || res.status === 403) logout();
+            return res.text();
+        })
+        .then(msg => {
+            bootstrap.Modal.getInstance(document.getElementById("checkoutModal")).hide();
+            if (msg.includes("thành công")) {
+                showToast("🎉 " + msg, "success");
+                setTimeout(() => window.location.href = "/history", 1500);
+            } else {
+                showToast(msg, "error");
+                btn.disabled = false; btn.textContent = "Xác Nhận Đặt Hàng";
+            }
+        });
+    }
+</script>
+</body>
+</html>

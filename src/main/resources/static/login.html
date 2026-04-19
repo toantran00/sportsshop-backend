@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Nhập / Đăng Ký - ShopeeSport</title>
+    <meta name="description" content="Đăng nhập hoặc đăng ký tài khoản ShopeeSport để mua sắm dụng cụ thể thao chính hãng.">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body {
+            background: linear-gradient(135deg, #ee4d2d 0%, #ff7337 50%, #ff9a5c 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .auth-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+            padding: 0;
+            width: 100%;
+            max-width: 460px;
+            overflow: hidden;
+        }
+        .auth-header {
+            background: linear-gradient(135deg, #ee4d2d, #ff6a3c);
+            padding: 30px 40px 24px;
+            text-align: center;
+            color: white;
+        }
+        .auth-header h2 { font-weight: 800; font-size: 1.8rem; margin: 0; }
+        .auth-header p { margin: 6px 0 0; opacity: 0.9; font-size: 0.95rem; }
+        .auth-body { padding: 30px 40px 36px; }
+
+        /* Tab switcher */
+        .auth-tabs { display: flex; border-bottom: 2px solid #f0f0f0; margin-bottom: 24px; }
+        .auth-tab {
+            flex: 1; text-align: center; padding: 10px; cursor: pointer;
+            font-weight: 600; color: #888; border-bottom: 2px solid transparent;
+            margin-bottom: -2px; transition: all 0.2s; font-size: 0.95rem; user-select: none;
+        }
+        .auth-tab.active { color: #ee4d2d; border-bottom-color: #ee4d2d; }
+        .auth-tab:hover:not(.active) { color: #ee4d2d; background: #fff6f4; }
+
+        .auth-panel { display: none; }
+        .auth-panel.active { display: block; }
+
+        .form-control, .form-control:focus {
+            border-radius: 8px; padding: 12px 14px; font-size: 0.95rem;
+        }
+        .form-control:focus { border-color: #ee4d2d; box-shadow: 0 0 0 3px rgba(238,77,45,0.12); }
+        .form-label { font-weight: 600; font-size: 0.88rem; color: #444; margin-bottom: 6px; }
+
+        .btn-shopee {
+            background: linear-gradient(135deg, #ee4d2d, #ff6a3c);
+            color: white; font-weight: 700; border: none;
+            border-radius: 8px; padding: 13px; font-size: 1rem;
+            transition: all 0.2s; letter-spacing: 0.5px;
+        }
+        .btn-shopee:hover {
+            background: linear-gradient(135deg, #d7310d, #ee4d2d);
+            color: white; transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(238,77,45,0.4);
+        }
+        .btn-shopee:active { transform: translateY(0); }
+        .btn-shopee:disabled { opacity: 0.7; transform: none; }
+
+        .msg-box {
+            border-radius: 8px; padding: 10px 14px; font-size: 0.88rem;
+            font-weight: 600; margin-bottom: 16px; display: none;
+        }
+        .msg-box.error { background: #fff0ee; color: #cc2200; border: 1px solid #ffcdc5; }
+        .msg-box.success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+
+        .input-hint { font-size: 0.8rem; color: #999; margin-top: 4px; }
+        .demo-accounts {
+            background: #fffbf5; border: 1px dashed #fcd5b0; border-radius: 8px;
+            padding: 12px 14px; margin-top: 16px; font-size: 0.82rem; color: #7a4a00;
+        }
+        .demo-accounts strong { color: #ee4d2d; }
+    </style>
+</head>
+<body>
+
+<div class="auth-card">
+    <div class="auth-header">
+        <h2>🛒 ShopeeSport</h2>
+        <p>Dụng cụ thể thao chính hãng — Giao nhanh toàn quốc</p>
+    </div>
+    <div class="auth-body">
+        <!-- Tab Switcher -->
+        <div class="auth-tabs">
+            <div class="auth-tab active" id="tabLogin" onclick="switchTab('login')">Đăng Nhập</div>
+            <div class="auth-tab" id="tabRegister" onclick="switchTab('register')">Đăng Ký</div>
+        </div>
+
+        <!-- PANEL ĐĂNG NHẬP -->
+        <div class="auth-panel active" id="panelLogin">
+            <div class="msg-box" id="loginMsg"></div>
+            <div class="mb-3">
+                <label class="form-label">Tên đăng nhập</label>
+                <input type="text" id="loginUsername" class="form-control" placeholder="Nhập tên đăng nhập" autocomplete="username">
+            </div>
+            <div class="mb-4">
+                <label class="form-label">Mật khẩu</label>
+                <input type="password" id="loginPassword" class="form-control" placeholder="Nhập mật khẩu" autocomplete="current-password">
+            </div>
+            <button class="btn btn-shopee w-100" id="btnLogin" onclick="login()">ĐĂNG NHẬP</button>
+            <div class="demo-accounts mt-3">
+                💡 <strong>Demo:</strong> Admin: <code>admin</code> / <code>123456</code> &nbsp;|&nbsp; Khách: <code>toan</code> / <code>123456</code>
+            </div>
+        </div>
+
+        <!-- PANEL ĐĂNG KÝ -->
+        <div class="auth-panel" id="panelRegister">
+            <div class="msg-box" id="registerMsg"></div>
+            <div class="mb-3">
+                <label class="form-label">Tên đăng nhập <span class="text-danger">*</span></label>
+                <input type="text" id="regUsername" class="form-control" placeholder="Từ 3-30 ký tự" autocomplete="username">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Mật khẩu <span class="text-danger">*</span></label>
+                <input type="password" id="regPassword" class="form-control" placeholder="Ít nhất 6 ký tự" autocomplete="new-password">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email (để nhận biên lai đơn hàng)</label>
+                <input type="email" id="regEmail" class="form-control" placeholder="example@gmail.com">
+            </div>
+            <div class="mb-4">
+                <label class="form-label">Địa chỉ giao hàng</label>
+                <input type="text" id="regAddress" class="form-control" placeholder="Số nhà, đường, phường, quận, tỉnh...">
+            </div>
+            <button class="btn btn-shopee w-100" id="btnRegister" onclick="register()">TẠO TÀI KHOẢN</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Nếu đã có token → đá thẳng vào trong
+    if (localStorage.getItem("sports_token")) {
+        const savedRole = localStorage.getItem("sports_role");
+        window.location.href = savedRole === "ADMIN" ? "/seller" : "/shop";
+    }
+
+    function switchTab(tab) {
+        document.getElementById("panelLogin").classList.toggle("active", tab === "login");
+        document.getElementById("panelRegister").classList.toggle("active", tab === "register");
+        document.getElementById("tabLogin").classList.toggle("active", tab === "login");
+        document.getElementById("tabRegister").classList.toggle("active", tab === "register");
+        hideMsg("loginMsg");
+        hideMsg("registerMsg");
+    }
+
+    function showMsg(id, text, type = "error") {
+        const el = document.getElementById(id);
+        el.className = "msg-box " + type;
+        el.textContent = text;
+        el.style.display = "block";
+    }
+    function hideMsg(id) {
+        document.getElementById(id).style.display = "none";
+    }
+
+    function getRoleFromToken(token) {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+            return payload.role || "CUSTOMER";
+        } catch (e) { return "CUSTOMER"; }
+    }
+
+    // Enter key để submit
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            const loginActive = document.getElementById("panelLogin").classList.contains("active");
+            if (loginActive) login(); else register();
+        }
+    });
+
+    async function login() {
+        const username = document.getElementById("loginUsername").value.trim();
+        const password = document.getElementById("loginPassword").value;
+        if (!username || !password) {
+            showMsg("loginMsg", "❌ Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu!");
+            return;
+        }
+        const btn = document.getElementById("btnLogin");
+        btn.disabled = true; btn.textContent = "Đang đăng nhập...";
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const body = await res.text();
+            if (!res.ok) throw new Error(body || "Sai tài khoản hoặc mật khẩu!");
+            localStorage.setItem("sports_token", body);
+            const role = getRoleFromToken(body);
+            localStorage.setItem("sports_role", role);
+            window.location.href = role === "ADMIN" ? "/seller" : "/shop";
+        } catch (err) {
+            showMsg("loginMsg", "❌ " + err.message);
+            btn.disabled = false; btn.textContent = "ĐĂNG NHẬP";
+        }
+    }
+
+    async function register() {
+        const username = document.getElementById("regUsername").value.trim();
+        const password = document.getElementById("regPassword").value;
+        const email    = document.getElementById("regEmail").value.trim();
+        const address  = document.getElementById("regAddress").value.trim();
+
+        if (!username || !password) {
+            showMsg("registerMsg", "❌ Tên đăng nhập và mật khẩu là bắt buộc!");
+            return;
+        }
+        if (username.length < 3) {
+            showMsg("registerMsg", "❌ Tên đăng nhập phải có ít nhất 3 ký tự!");
+            return;
+        }
+        if (password.length < 6) {
+            showMsg("registerMsg", "❌ Mật khẩu phải có ít nhất 6 ký tự!");
+            return;
+        }
+
+        const btn = document.getElementById("btnRegister");
+        btn.disabled = true; btn.textContent = "Đang tạo tài khoản...";
+        try {
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, email: email || null, address: address || null })
+            });
+            const body = await res.text();
+            if (!res.ok) throw new Error(body || "Đăng ký thất bại!");
+            // body là JWT token (auto-login)
+            localStorage.setItem("sports_token", body);
+            localStorage.setItem("sports_role", "CUSTOMER");
+            showMsg("registerMsg", "✅ Tạo tài khoản thành công! Đang chuyển hướng...", "success");
+            setTimeout(() => window.location.href = "/shop", 1200);
+        } catch (err) {
+            showMsg("registerMsg", "❌ " + err.message);
+            btn.disabled = false; btn.textContent = "TẠO TÀI KHOẢN";
+        }
+    }
+</script>
+</body>
+</html>

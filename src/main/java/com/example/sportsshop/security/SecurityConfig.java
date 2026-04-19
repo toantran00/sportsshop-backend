@@ -22,15 +22,36 @@ public class SecurityConfig {
         return http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                        // ── Trang HTML & static resources ──
+                        .requestMatchers("/", "/cart", "/seller", "/login", "/shop",
+                                "/history", "/index.html", "/static/**", "/*.*").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
+
+                        // ── Auth: đăng nhập + đăng ký ──
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/index.html").permitAll()
+
+                        // ── Products: ai cũng xem được ──
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+
+                        // ── Products: chỉ ADMIN mới CUD ──
+                        .requestMatchers(HttpMethod.POST,   "/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT,    "/api/products/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/products/**").hasRole("ADMIN")
+
+                        // ── Orders: chỉ CUSTOMER ──
                         .requestMatchers(HttpMethod.POST, "/api/orders/checkout").hasRole("CUSTOMER")
+                        .requestMatchers(HttpMethod.POST, "/api/orders/checkout-cart").hasRole("CUSTOMER")
+                        .requestMatchers(HttpMethod.GET,  "/api/orders/my-history").hasRole("CUSTOMER")
+
+                        // ── Cart: chỉ CUSTOMER ──
+                        .requestMatchers("/api/cart/**").hasRole("CUSTOMER")
+
+                        // ── Phần còn lại: phải đăng nhập ──
                         .anyRequest().authenticated()
                 )
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

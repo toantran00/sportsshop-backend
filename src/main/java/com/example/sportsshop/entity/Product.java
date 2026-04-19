@@ -29,4 +29,6 @@ public class Product {
     @Version
     private Integer version;
 
+    private String imageUrl;
+
 }

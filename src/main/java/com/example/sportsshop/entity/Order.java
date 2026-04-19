@@ -9,7 +9,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Data
-
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "customer_orders")
 public class Order {
     @Id
@@ -17,6 +18,8 @@ public class Order {
     private int id;
 
     private String customerName;
+    private String customerEmail;
+    private String shippingAddress;
     private String productName;
     private int quantityBought;
     private double totalPrice;
